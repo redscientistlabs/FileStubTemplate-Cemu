@@ -24,7 +24,7 @@ namespace FileStub.Templates
 
         const string CEMUSTUB_RPX = "Cemu : Wii U RPX Executables";
 
-        public string expectedCemuVersion { get; set; } = "1.22.6c";//"1.22.3";
+        public string expectedCemuVersion { get; set; } = "1.24";
         public string expectedCemuTitle => "Cemu " + expectedCemuVersion;
 
         public string cemuDir = Path.Combine(FileStub.FileWatch.currentDir, "CEMU");
@@ -811,6 +811,8 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
 
         private void cbSelectedGame_SelectedIndexChanged(object sender, EventArgs e)
         {
+                return;
+
             var selected = cbSelectedGame.SelectedItem.ToString();
 
             if (selected == "Autodetect")
