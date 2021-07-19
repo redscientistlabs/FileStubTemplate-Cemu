@@ -366,9 +366,15 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
             string[] logLoadingLineParts = logLoadingLine.Split(' ');
             currentSession.rpxFile = logLoadingLineParts[logLoadingLineParts.Length - 1];
 
-            //getting full rpx path from settings.xml
+            //getting full rpx path from logs
             string settingsXmlRpxLine = settingsXml.FirstOrDefault(it => it.Contains(currentSession.rpxFile));
             string[] settingsXmlRpxLineParts = settingsXmlRpxLine.Split('>')[1].Split('<');
+
+            //getting update path from logs
+            string logUpdateLine = logTxt.FirstOrDefault(it => it.Contains("Update path: "));
+            int updatePathPos = logUpdateLine.IndexOf("Update path: ");
+            string updateLinePost = logUpdateLine.Substring(updatePathPos);
+            string sanitizedUpdateLine = updateLinePost.Replace("Update path:", "").Replace("(not present)", "").Trim();
 
             //gameRpxPath =
             //gameRpxFileInfo = new FileInfo(gameRpxPath);
@@ -386,8 +392,12 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
 
             currentSession.gameRpxPath = settingsXmlRpxLineParts[0];
             currentSession.gameRpxFileInfo = new FileInfo(currentSession.gameRpxPath);
-            currentSession.updateRpxPath = Path.Combine(currentSession.cemuExeFile.DirectoryName, "mlc01", "usr",
-                "title", currentSession.FirstID, currentSession.SecondID);
+
+
+            currentSession.updateRpxPath = sanitizedUpdateLine;
+            //currentSession.updateRpxPath = Path.Combine(currentSession.cemuExeFile.DirectoryName, "mlc01", "usr",
+            //    "title", currentSession.FirstID, currentSession.SecondID);
+
 
             currentSession.updateCodePath = Path.Combine(currentSession.updateRpxPath, "code");
             currentSession.updateMetaPath = Path.Combine(currentSession.updateRpxPath, "meta");
@@ -811,6 +821,7 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
 
         private void cbSelectedGame_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (DontSelectGame)
                 return;
 
             var selected = cbSelectedGame.SelectedItem.ToString();

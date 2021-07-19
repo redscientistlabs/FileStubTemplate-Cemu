@@ -32,13 +32,13 @@ namespace FileStub.Templates
             this.lbTemplateDescription = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.btnGetSegments = new System.Windows.Forms.Button();
             this.lbTargetVersion = new System.Windows.Forms.Label();
             this.tbExpectedVersion = new System.Windows.Forms.TextBox();
             this.lbTargetedGameRpx = new System.Windows.Forms.Label();
             this.lbTargetedGameId = new System.Windows.Forms.Label();
             this.cbSelectedGame = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
-            this.btnGetSegments = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
@@ -82,6 +82,25 @@ namespace FileStub.Templates
             this.panel2.Size = new System.Drawing.Size(274, 136);
             this.panel2.TabIndex = 42;
             this.panel2.Tag = "color:normal";
+            // 
+            // btnGetSegments
+            // 
+            this.btnGetSegments.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnGetSegments.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.btnGetSegments.FlatAppearance.BorderSize = 0;
+            this.btnGetSegments.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnGetSegments.Font = new System.Drawing.Font("Segoe UI", 8F);
+            this.btnGetSegments.ForeColor = System.Drawing.Color.White;
+            this.btnGetSegments.Location = new System.Drawing.Point(127, 43);
+            this.btnGetSegments.Name = "btnGetSegments";
+            this.btnGetSegments.Size = new System.Drawing.Size(132, 32);
+            this.btnGetSegments.TabIndex = 191;
+            this.btnGetSegments.TabStop = false;
+            this.btnGetSegments.Tag = "color:dark1";
+            this.btnGetSegments.Text = "Get Segments";
+            this.btnGetSegments.UseVisualStyleBackColor = false;
+            this.btnGetSegments.Visible = false;
+            this.btnGetSegments.Click += new System.EventHandler(this.btnGetSegments_Click);
             // 
             // lbTargetVersion
             // 
@@ -152,24 +171,6 @@ namespace FileStub.Templates
             this.label5.Size = new System.Drawing.Size(87, 15);
             this.label5.TabIndex = 41;
             this.label5.Text = "Targeted Game";
-            // 
-            // btnGetSegments
-            // 
-            this.btnGetSegments.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnGetSegments.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.btnGetSegments.FlatAppearance.BorderSize = 0;
-            this.btnGetSegments.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnGetSegments.Font = new System.Drawing.Font("Segoe UI", 8F);
-            this.btnGetSegments.ForeColor = System.Drawing.Color.White;
-            this.btnGetSegments.Location = new System.Drawing.Point(127, 43);
-            this.btnGetSegments.Name = "btnGetSegments";
-            this.btnGetSegments.Size = new System.Drawing.Size(132, 32);
-            this.btnGetSegments.TabIndex = 191;
-            this.btnGetSegments.TabStop = false;
-            this.btnGetSegments.Tag = "color:dark1";
-            this.btnGetSegments.Text = "Get Segments";
-            this.btnGetSegments.UseVisualStyleBackColor = false;
-            this.btnGetSegments.Click += new System.EventHandler(this.btnGetSegments_Click);
             // 
             // FileStubTemplateCemu
             // 
