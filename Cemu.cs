@@ -470,6 +470,8 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
             }
             catch (Exception e)
             {
+                _ = e;
+
                 MessageBox.Show("Something went wrong when locating the RPX of the running game.\nYou can probably fix this by going to your Cemu folder and deleting settings.bin, then trying again.\nIf this doesn't fix it, poke the devs.\n\nCouldn't find: " + gamePath);
                 state = CemuState.UNFOUND;
                 return false;
@@ -876,7 +878,7 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
         public string gameName = "Autodetect";
         public string updateRpxUncompressedToken = null;
         public FileInterface rpxInterface = null;
-        internal FileMemoryInterface fileInterface;
+        //internal FileMemoryInterface fileInterface;
 
         public override string ToString()
         {
