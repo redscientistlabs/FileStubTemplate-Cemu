@@ -14,6 +14,10 @@ namespace FileStub.Templates
     using System.Text;
     using System.Threading.Tasks;
     using System.Windows.Forms;
+    using System.Xml;
+    using System.Xml.Linq;
+    using System.Xml.Serialization;
+    using Cemu;
     using Newtonsoft.Json;
     using RTCV.Common;
     using RTCV.CorruptCore;
@@ -24,10 +28,11 @@ namespace FileStub.Templates
 
         const string CEMUSTUB_RPX = "Cemu : Wii U RPX Executables";
 
-        public string expectedCemuVersion { get; set; } = "1.24";
+        public string expectedCemuVersion { get; set; } = "2.0";
         public string expectedCemuTitle => "Cemu " + expectedCemuVersion;
 
         public string cemuDir = Path.Combine(FileStub.FileWatch.currentDir, "CEMU");
+        public string cemuPath { get; set; }
 
         Process cemuProcess = null;
 
@@ -76,6 +81,10 @@ namespace FileStub.Templates
 
             if (!Directory.Exists(cemuParamsDir))
                 Directory.CreateDirectory(cemuParamsDir);
+            if (File.Exists(Path.Combine(cemuParamsDir, "PATHNAME")))
+            {
+                cemuPath = File.ReadAllText(Path.Combine(cemuParamsDir, "PATHNAME"));
+            }
         }
 
         private void TbExpectedVersion_TextChanged(object sender, EventArgs e)
@@ -211,8 +220,9 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
             {
                 try
                 {
-                    p = Process.GetProcessesByName("Cemu")
-                        .FirstOrDefault(it => it?.MainWindowTitle?.Contains(expectedCemuTitle) ?? false);
+                    p = Process.Start(cemuPath ?? (Prompt.ShowDialog("Cemu path", "Enter the path to cemu.")));
+                    cemuPath = p.StartInfo.FileName;
+                    File.WriteAllText(Path.Combine(Path.Combine(Path.Combine(cemuDir, "PARAMS"), "PATHNAME")), cemuPath);
                 }
                 catch (InvalidOperationException e)
                 {
@@ -260,26 +270,9 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
             ///
             ///Fetching Game info from cemu process window title
             ///
-
-            string windowTitle = cemuProcess.MainWindowTitle;
-
-            if (windowTitle.Contains("[Online]"))
-            {
-                MessageBox.Show("Cemu is in online mode. Cancelling load to prevent any potential bans.\nDisable online mode to use the Cemu template");
-                return false;
-            }
+            currentSession.cemuExeFile = new FileInfo(cemuPath);
 
 
-            string TitleIdPart = windowTitle.Split('[').FirstOrDefault(it => it.Contains("TitleId:"));
-            string TitleNumberPartLong = TitleIdPart.Split(':')[1];
-            string TitleNumberPart = TitleNumberPartLong.Split(']')[0];
-            string TitleGameNamePart = TitleNumberPartLong.Split(']')[1];
-
-            currentSession.FirstID = TitleNumberPart.Split('-')[0].Trim();
-            currentSession.SecondID = TitleNumberPart.Split('-')[1].Trim();
-            currentSession.cemuExeFile = new FileInfo(cemuProcess.MainModule.FileName);
-
-            currentSession.gameName = TitleGameNamePart.Trim();
             return true;
         }
 
@@ -353,69 +346,48 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
         }
         private bool LoadDataFromCemuFilesXml()
         {
+
+            var directorypath = currentSession.cemuExeFile.DirectoryName;
+            XmlSerializer xml = new XmlSerializer(typeof(Title_list));
+            TextReader reader = new StreamReader(Path.Combine(directorypath, "title_list_cache.xml"));
+
+            var titlelist = (Title_list)xml.Deserialize(reader);
             ///
             ///gathering data from log.txt and settings.xml files
             ///
-
-            string[] logTxt = File.ReadAllLines(Path.Combine(currentSession.cemuExeFile.DirectoryName, "log.txt"));
-            string[] settingsXml =
-                File.ReadAllLines(Path.Combine(currentSession.cemuExeFile.DirectoryName, "settings.xml"));
-
-            //getting rpx filename from log.txt
-            string logLoadingLine = logTxt.FirstOrDefault(it => it.Contains("Loading") && it.Contains(".rpx"));
-            string[] logLoadingLineParts = logLoadingLine.Split(' ');
-            currentSession.rpxFile = logLoadingLineParts[logLoadingLineParts.Length - 1];
-
-            //getting full rpx path from logs
-            string settingsXmlRpxLine = settingsXml.FirstOrDefault(it => it.Contains(currentSession.rpxFile));
-            string[] settingsXmlRpxLineParts = settingsXmlRpxLine.Split('>')[1].Split('<');
-
-            //getting update path from logs
-            string logUpdateLine = logTxt.FirstOrDefault(it => it.Contains("Update path: "));
-            int updatePathPos = logUpdateLine.IndexOf("Update path: ");
-            string updateLinePost = logUpdateLine.Substring(updatePathPos);
-            string sanitizedUpdateLine = updateLinePost.Replace("Update path:", "").Replace("(not present)", "").Trim();
-
-            //gameRpxPath =
-            //gameRpxFileInfo = new FileInfo(gameRpxPath);
-            //updateRpxPath = Path.Combine(cemuExeFile.DirectoryName, "mlc01", "usr", "title", FirstID, SecondID);
-
-            //updateCodePath = Path.Combine(updateRpxPath, "code");
-            //updateMetaPath = Path.Combine(updateRpxPath, "meta");
-
-
-
-            //updateRpxLocation = Path.Combine(updateCodePath, rpxFile);
-            //updateRpxCompressed = Path.Combine(updateCodePath, "compressed_" + rpxFile);
-            //updateRpxBackup = Path.Combine(updateCodePath, "backup_" + rpxFile);
-
-
-            currentSession.gameRpxPath = settingsXmlRpxLineParts[0];
-            currentSession.gameRpxFileInfo = new FileInfo(currentSession.gameRpxPath);
-
-
-            currentSession.updateRpxPath = sanitizedUpdateLine;
-            //currentSession.updateRpxPath = Path.Combine(currentSession.cemuExeFile.DirectoryName, "mlc01", "usr",
-            //    "title", currentSession.FirstID, currentSession.SecondID);
-
-
-            currentSession.updateCodePath = Path.Combine(currentSession.updateRpxPath, "code");
-            currentSession.updateMetaPath = Path.Combine(currentSession.updateRpxPath, "meta");
-
-            currentSession.gameSaveFolder = new DirectoryInfo(Path.Combine(
-                currentSession.cemuExeFile.DirectoryName, "mlc01", "usr", "save", currentSession.FirstID,
-                currentSession.SecondID));
-
-
-
-            currentSession.updateRpxLocation =
-                Path.Combine(currentSession.updateCodePath, currentSession.rpxFile);
-            currentSession.updateRpxCompressed = Path.Combine(currentSession.updateCodePath,
-                "compressed_" + currentSession.rpxFile);
-            currentSession.updateRpxBackup =
-                Path.Combine(currentSession.updateCodePath, "backup_" + currentSession.rpxFile);
-            currentSession.updateRpxUncompressedToken =
-                Path.Combine(currentSession.updateCodePath, "UNCOMPRESSED.txt");
+            Dictionary<string, string> gameUpdatePaths = new Dictionary<string, string>();
+            foreach (var title in titlelist.Title)
+            {
+                var knowngame = new CemuStubSession();
+                if (title.App_type.ToLower() == "0800000e")
+                {
+                    continue;// ignore DLC
+                }
+                if (title.App_type.ToLower() == "0800001b")
+                {
+                    gameUpdatePaths[title.Name] = title.Path;
+                    continue;
+                }
+                knowngame.cemuExeFile = currentSession.cemuExeFile;
+                knowngame.FirstID = title.TitleId.Substring(0, 8);
+                knowngame.SecondID = title.TitleId.Substring(8, 8);
+                knowngame.gameName = title.Name;
+                knowngame.gameRpxPath = Directory.GetFiles(Path.Combine(title.Path, "code")).FirstOrDefault(x => x.EndsWith(".rpx"));
+                knowngame.gameRpxFileInfo = new FileInfo(knowngame.gameRpxPath);
+                knowngame.updateCodePath = Directory.Exists(Path.Combine(directorypath, "mlc01", "usr", "title", knowngame.FirstID, knowngame.SecondID, "code")) ? Path.Combine(directorypath, "mlc01", "usr", "title", knowngame.FirstID, knowngame.SecondID, "code") : (gameUpdatePaths.ContainsKey(title.Name)) ? Path.Combine(gameUpdatePaths[title.Name], "code") : Path.Combine(title.Path, "code");
+                knowngame.updateRpxPath = knowngame.updateCodePath;
+                knowngame.updateMetaPath = Directory.Exists(Path.Combine(directorypath, "mlc01", "usr", "title", knowngame.FirstID, knowngame.SecondID, "meta")) ? Path.Combine(directorypath, "mlc01", "usr", "title", knowngame.FirstID, knowngame.SecondID, "meta") : (gameUpdatePaths.ContainsKey(title.Name)) ? Path.Combine(gameUpdatePaths[title.Name], "meta") : Path.Combine(title.Path, "meta");
+                knowngame.gameSaveFolder = new DirectoryInfo(Path.Combine(directorypath, "mlc01", "usr", "save", knowngame.FirstID, knowngame.SecondID));
+                knowngame.rpxFile = knowngame.gameRpxFileInfo.Name;
+                knowngame.updateRpxLocation = Path.Combine(knowngame.updateCodePath, knowngame.gameRpxFileInfo.Name);
+                knowngame.updateRpxCompressed = Path.Combine(knowngame.updateCodePath,
+                    "compressed_" + currentSession.rpxFile);
+                knowngame.updateRpxBackup =
+                    Path.Combine(knowngame.updateCodePath, "backup_" + knowngame.rpxFile);
+                knowngame.updateRpxUncompressedToken =
+                    Path.Combine(knowngame.updateCodePath, "UNCOMPRESSED.txt");
+                knownGamesDico[knowngame.gameName] = knowngame;
+            }
 
             return true;
         }
@@ -680,6 +652,16 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
             if (selected != null && selected != "Autodetect")
                 currentSession = knownGamesDico[selected];
 
+            if (selected == null)
+            {
+                selected = Prompt.ShowDialog("Select game", "Enter the name of the game you wish to corrupt.");
+                while (!knownGamesDico.ContainsKey(selected))
+                {
+                    selected = Prompt.ShowDialog("Select game", "INVALID GAME NAME.\nEnter the name of the game you wish to corrupt.");
+                }
+                currentSession = knownGamesDico[selected];
+            }
+
             var cemuFullPath = currentSession.cemuExeFile;
             if (!File.Exists(cemuFullPath.FullName))
             {
@@ -759,10 +741,7 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
 
             ScanCemu();
 
-            if (state == CemuState.RUNNING && cemuProcess.MainWindowTitle.Contains("[TitleId:"))
-                state = CemuState.GAMELOADED;
-
-            if (state == CemuState.GAMELOADED)
+            if (true)
             {
                 state = CemuState.PREPARING; // this prevents the ticker to call this method again
 
@@ -783,13 +762,13 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
                     return null; //Could not get the rpx file location
                 }
 
-                // Prepare fake update and backup
-                var rpxTargetFile = PrepareUpdateFolder();
-
-                knownGamesDico[currentSession.gameName] = currentSession;
+                //knownGamesDico[currentSession.gameName] = currentSession;
 
                 if (!SelectGame())
                     return null;
+
+                // Prepare fake update and backup
+                var rpxTargetFile = PrepareUpdateFolder();
 
                 DontSelectGame = true;
                 cbSelectedGame.Items.Add(currentSession.gameName);
@@ -928,5 +907,32 @@ Load a game in Cemu and after it has loaded, click on Load targets into RTCV.
 
             return true;
         }
+    }
+    [XmlRoot(ElementName = "title")]
+    public class Title
+    {
+        [XmlElement(ElementName = "region")]
+        public string Region { get; set; }
+        [XmlElement(ElementName = "name")]
+        public string Name { get; set; }
+        [XmlElement(ElementName = "format")]
+        public string Format { get; set; }
+        [XmlElement(ElementName = "path")]
+        public string Path { get; set; }
+        [XmlAttribute(AttributeName = "titleId")]
+        public string TitleId { get; set; }
+        [XmlAttribute(AttributeName = "version")]
+        public string Version { get; set; }
+        [XmlAttribute(AttributeName = "group_id")]
+        public string Group_id { get; set; }
+        [XmlAttribute(AttributeName = "app_type")]
+        public string App_type { get; set; }
+    }
+
+    [XmlRoot(ElementName = "title_list")]
+    public class Title_list
+    {
+        [XmlElement(ElementName = "title")]
+        public List<Title> Title { get; set; }
     }
 }
